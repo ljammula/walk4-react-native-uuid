@@ -2,28 +2,35 @@ import {validate} from '../validate';
 
 describe('validate', () => {
   describe('Valid UUIDs', () => {
-    it('should validate v1 UUID', () => {
-      // Valid v1 UUID
-      expect(validate('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
-    });
-
-    it('should validate v3 UUID', () => {
-      // Valid v3 UUID (version bits are 3)
-      expect(validate('6ba7b810-9dad-31d1-80b4-00c04fd430c8')).toBe(true);
-    });
-
-    it('should validate v4 UUID', () => {
-      // Valid v4 UUID (version bits are 4)
-      expect(validate('550e8400-e29b-41d4-a716-446655440000')).toBe(true);
-    });
-
-    it('should validate v5 UUID', () => {
-      // Valid v5 UUID (version bits are 5)
-      expect(validate('886313e1-3b8a-5372-9b90-0c9aee199e5d')).toBe(true);
+    it.each([
+      ['v1', '6ba7b811-9dad-11d1-80b4-00c04fd430c8'],
+      ['v2', '550e8400-e29b-21d4-a716-446655440000'],
+      ['v3', '6ba7b810-9dad-31d1-80b4-00c04fd430c8'],
+      ['v4', '550e8400-e29b-41d4-a716-446655440000'],
+      ['v5', '886313e1-3b8a-5372-9b90-0c9aee199e5d'],
+    ])('should validate %s UUID', (_version, uuid) => {
+      expect(validate(uuid)).toBe(true);
     });
 
     it('should validate NIL UUID', () => {
       expect(validate('00000000-0000-0000-0000-000000000000')).toBe(true);
+    });
+
+    it('should validate the lowercase UUIDv7 example', () => {
+      expect(validate('017f22e2-79b0-7cc3-98c4-dc0c0c07398f')).toBe(true);
+    });
+
+    it('should validate the uppercase UUIDv7 example', () => {
+      expect(validate('017F22E2-79B0-7CC3-98C4-DC0C0C07398F')).toBe(true);
+    });
+
+    it.each([
+      '01234567-89ab-7cde-8f01-23456789abcd',
+      '89ABCDEF-0123-7ABC-9DEF-0123456789AB',
+      'aBcDeF01-2345-7AbC-aDeF-0123AbCdEf45',
+      'FEDcBA98-7654-7fED-Ba98-9876FeDcBa10',
+    ])('should validate canonical UUIDv7 values: %s', (uuid) => {
+      expect(validate(uuid)).toBe(true);
     });
 
     it('should validate uppercase UUID', () => {
@@ -40,12 +47,34 @@ describe('validate', () => {
   });
 
   describe('Invalid UUIDs', () => {
+    it.each(['0', '6', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'])(
+      'should reject UUID with unsupported version nibble %s',
+      (version) => {
+        expect(
+          validate(`01234567-89ab-${version}cde-8f01-23456789abcd`),
+        ).toBe(false);
+      },
+    );
+
+    it.each(['0', '1', '2', '3', '4', '5', '6', '7', 'c', 'd', 'e', 'f'])(
+      'should reject UUIDv7 with unsupported variant nibble %s',
+      (variant) => {
+        expect(
+          validate(`01234567-89ab-7cde-${variant}f01-23456789abcd`),
+        ).toBe(false);
+      },
+    );
+
     it('should reject UUID with invalid characters', () => {
       expect(validate('550e8400-e29b-41d4-a716-44665544000z')).toBe(false);
     });
 
     it('should reject UUID without hyphens', () => {
       expect(validate('550e8400e29b41d4a716446655440000')).toBe(false);
+    });
+
+    it('should reject UUID with misplaced hyphens', () => {
+      expect(validate('550e8400-e29b-41d4-a716446655440000')).toBe(false);
     });
 
     it('should reject UUID with incorrect number of segments', () => {
