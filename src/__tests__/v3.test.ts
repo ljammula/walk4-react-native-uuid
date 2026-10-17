@@ -140,6 +140,12 @@ describe('v3', () => {
   });
 
   describe('Namespace validation', () => {
+    it('should reject an invalid string namespace with the exact error', () => {
+      expect(() => {
+        v3('example.com', 'not-a-uuid');
+      }).toThrow(new TypeError('Namespace must be a valid UUID string'));
+    });
+
     it('should throw error if namespace length is not exactly 16 after parsing', () => {
       // Note: parse() pads short strings with zeros,so a short string won't trigger the error
       // We need to pass a short array that ISOString make it clear it's not 16 bytes

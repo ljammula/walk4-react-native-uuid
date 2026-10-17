@@ -8,24 +8,28 @@ describe('v5', () => {
     it('should generate valid v5 UUID with DNS namespace', () => {
       const uuid = v5('example.com', DNS) as string;
       expect(typeof uuid).toBe('string');
+      expect(uuid).toBe('65613562-6164-5537-a230-613331333838');
       expect(validate(uuid)).toBe(true);
       expect(version(uuid)).toBe(5);
     });
 
     it('should generate valid v5 UUID with URL namespace', () => {
       const uuid = v5('https://example.com', URL) as string;
+      expect(uuid).toBe('65303765-3434-5230-b364-326231393131');
       expect(validate(uuid)).toBe(true);
       expect(version(uuid)).toBe(5);
     });
 
     it('should generate valid v5 UUID with OID namespace', () => {
       const uuid = v5('1.3.6.1', OID) as string;
+      expect(uuid).toBe('62663364-6331-5331-a664-353465333732');
       expect(validate(uuid)).toBe(true);
       expect(version(uuid)).toBe(5);
     });
 
     it('should generate valid v5 UUID with X500 namespace', () => {
       const uuid = v5('cn=example', X500) as string;
+      expect(uuid).toBe('33333734-3934-5163-a364-333131613030');
       expect(validate(uuid)).toBe(true);
       expect(version(uuid)).toBe(5);
     });
@@ -82,6 +86,18 @@ describe('v5', () => {
       const uuid1 = v5('example.com', DNS) as string;
       const uuid2 = v5('example.com', namespaceBytes) as string;
       expect(uuid1).toBe(uuid2);
+    });
+
+    it('should accept uppercase UUID strings and equivalent parsed bytes', () => {
+      const {parse} = require('../parse');
+      const lowercaseUUID = v5('example.com', DNS) as string;
+      const uppercaseUUID = v5('example.com', DNS.toUpperCase()) as string;
+      const namespaceBytes = parse(DNS);
+      const byteArrayUUID = v5('example.com', namespaceBytes) as string;
+
+      expect(uppercaseUUID).toBe(lowercaseUUID);
+      expect(byteArrayUUID).toBe(lowercaseUUID);
+      expect(namespaceBytes).toHaveLength(16);
     });
   });
 
@@ -150,6 +166,15 @@ describe('v5', () => {
   });
 
   describe('Namespace validation', () => {
+    it.each(['not-a-uuid', ''])(
+      'should reject invalid string namespace %j',
+      namespace => {
+        expect(() => {
+          v5('example.com', namespace);
+        }).toThrow(new TypeError('Namespace must be a valid UUID string'));
+      },
+    );
+
     it('should throw error if namespace length is not exactly 16 after parsing', () => {
       // Note: parse() pads short strings with zeros, so a short string won't trigger the error
       // We need to pass a short array to make it clear it's not 16 bytes
